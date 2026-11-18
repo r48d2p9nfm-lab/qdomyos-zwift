@@ -40,50 +40,33 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Force Python 3.10 Globally in PATH
+      - name: Install System Dependencies & Android SDK Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3.10 python3.10-dev python3.10-distutils python3-pip
-          mkdir -p $HOME/mybin
-          ln -sf /usr/bin/python3.10 $HOME/mybin/python3
-          ln -sf /usr/bin/python3.10 $HOME/mybin/python
-          echo "$HOME/mybin" >> $GITHUB_PATH
-          python3 --version
+          sudo apt-get install -y \
+            python3.10 python3.10-dev python3.10-distutils python3-pip \
+            qt5-qmake qtbase5-dev libqt5svg5-dev \
+            android-sdk adb
 
-      - name: Install Qt 5.15.2 Android Toolchain
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '5.15.2'
-          host: 'linux'
-          target: 'android'
-          arch: 'android_armeabi_v7a'
-          modules: 'qtnetworkauth qtcharts'
-          dir: '${{ github.workspace }}/qt/'
-          install-deps: 'true'
-          cache: 'true'
-
-      - name: Build qHttpServer for Android ARMv7
+      - name: Build qHttpServer
         run: |
-          cp qHttpServerBin/5.15.2/headers/* src/qthttpserver/src/3rdparty/http-parser/
-          export ANDROID_NDK_ROOT="${{ env.ANDROID_NDK_ROOT }}"
-          export QT_ROOT="${{ github.workspace }}/qt/5.15.2/android"
+          cp qHttpServerBin/5.15.2/headers/* src/qthttpserver/src/3rdparty/http-parser/ || true
           cd src/qthttpserver
-          "$QT_ROOT/bin/qmake"
+          qmake
           make -j$(nproc)
           make install
           cd ../..
 
       - name: Compile FitPro USB-HID Android APK (No Trial Flag)
         run: |
-          export QT_ROOT="${{ github.workspace }}/qt/5.15.2/android"
           cd src
-          "$QT_ROOT/bin/qmake" qdomyos-zwift.pro \
+          qmake qdomyos-zwift.pro \
             -spec android-clang \
             ANDROID_ABIS="armeabi-v7a" \
             "DEFINES+=FITPRO"
           make -j$(nproc)
           make install INSTALL_ROOT=android-build
-          "$QT_ROOT/bin/androiddeployqt" \
+          androiddeployqt \
             --input android-qdomyos-zwift-deployment-settings.json \
             --output android-build \
             --android-platform android-33 \
