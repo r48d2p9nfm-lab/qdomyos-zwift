@@ -40,6 +40,12 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
+      # FIX: Force Python 3.10 so androiddeployqt finds distutils
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
       - name: Install Qt 5.15.2 Android Toolchain
         uses: jurplel/install-qt-action@v3
         with:
